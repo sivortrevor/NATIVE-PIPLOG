@@ -714,7 +714,6 @@ fun AddTradeScreen(
                 isLoading = uiState.isSaving,
                 onClick = {
                     viewModel.saveTrade(
-                        userId = "current-user-id",
                         pair = pair,
                         side = side,
                         lotSize = lotSize.toDoubleOrNull() ?: 0.0,

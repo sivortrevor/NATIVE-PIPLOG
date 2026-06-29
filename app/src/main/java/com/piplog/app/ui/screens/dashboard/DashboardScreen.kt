@@ -72,11 +72,6 @@ fun DashboardScreen(
         quotes[Calendar.getInstance().get(Calendar.DAY_OF_MONTH) % quotes.size]
     }
 
-    LaunchedEffect(Unit) {
-        // Load data - userId would come from auth state
-        viewModel.loadData("current-user-id")
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -293,6 +288,50 @@ fun DashboardScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Detailed Stats
+        SectionHeader(
+            title = "DETAILED STATISTICS",
+            icon = { Icon(Icons.Default.Analytics, contentDescription = null, tint = Primary) }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            DetailedStatCard(
+                label = "Win Rate",
+                value = "${uiState.metrics?.winRate?.toInt() ?: 0}%",
+                modifier = Modifier.weight(1f)
+            )
+            DetailedStatCard(
+                label = "Profit Factor",
+                value = "1.24", // Placeholder
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            DetailedStatCard(
+                label = "Avg. RR",
+                value = "1:%.1f".format(uiState.metrics?.avgRR ?: 0.0),
+                modifier = Modifier.weight(1f)
+            )
+            DetailedStatCard(
+                label = "Max DD",
+                value = "%.1f%%".format(uiState.metrics?.maxDrawdown ?: 0.0),
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Weekly goal
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(20.dp)) {
@@ -414,6 +453,29 @@ fun EquityLineChart(
             .height(160.dp),
         lineChartData = lineChartData
     )
+}
+
+@Composable
+fun DetailedStatCard(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    GlassCard(modifier = modifier) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MutedText
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+    }
 }
 
 @Composable

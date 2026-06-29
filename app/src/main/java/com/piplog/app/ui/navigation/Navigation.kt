@@ -36,6 +36,12 @@ sealed class Screen(val route: String) {
     data object Settings : Screen("settings")
 }
 
+data class BottomNavItem(
+    val screen: Screen,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val label: String
+)
+
 @Composable
 fun PipLogNavHost(
     navController: NavHostController = rememberNavController(),

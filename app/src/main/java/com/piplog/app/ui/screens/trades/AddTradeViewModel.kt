@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.piplog.app.data.model.Trade
 import com.piplog.app.data.repository.TradeRepository
+import com.piplog.app.data.repository.AuthRepository
 import com.piplog.app.utils.TradeUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,14 +20,14 @@ data class AddTradeUiState(
 )
 
 class AddTradeViewModel(
-    private val tradeRepository: TradeRepository = TradeRepository()
+    private val tradeRepository: TradeRepository = TradeRepository(),
+    private val authRepository: AuthRepository = AuthRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddTradeUiState())
     val uiState: StateFlow<AddTradeUiState> = _uiState.asStateFlow()
 
     fun saveTrade(
-        userId: String,
         pair: String,
         side: String,
         lotSize: Double,
@@ -47,6 +48,12 @@ class AddTradeViewModel(
     ) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, error = null) }
+
+            val userId = authRepository.currentUserId
+            if (userId == null) {
+                _uiState.update { it.copy(isSaving = false, error = "User not logged in") }
+                return@launch
+            }
 
             val now = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
                 .format(java.util.Date())

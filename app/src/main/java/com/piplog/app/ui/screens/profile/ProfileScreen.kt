@@ -16,14 +16,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.piplog.app.ui.components.GlassCard
 import com.piplog.app.ui.theme.*
+import com.piplog.app.utils.TradeUtils
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun ProfileScreen(onNavigateBack: () -> Unit) {
-    var displayName by remember { mutableStateOf("Trader") }
+fun ProfileScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: ProfileViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    var displayName by remember { mutableStateOf("") }
     var isEditing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uiState.profile) {
+        if (uiState.profile != null) {
+            displayName = uiState.profile?.displayName ?: "Trader"
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -69,7 +82,7 @@ fun ProfileScreen(onNavigateBack: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = displayName.firstOrNull()?.uppercase() ?: "T",
+                    text = (if (displayName.isBlank()) uiState.email.firstOrNull()?.toString() else displayName.firstOrNull()?.toString())?.uppercase() ?: "T",
                     style = MaterialTheme.typography.displayMedium,
                     fontWeight = FontWeight.ExtraBold,
                     color = PrimaryContainer
@@ -96,7 +109,10 @@ fun ProfileScreen(onNavigateBack: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
-                        onClick = { isEditing = false },
+                        onClick = { 
+                            viewModel.updateProfile(displayName)
+                            isEditing = false 
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = Primary)
                     ) {
                         Text("Save")
@@ -107,7 +123,7 @@ fun ProfileScreen(onNavigateBack: () -> Unit) {
                 }
             } else {
                 Text(
-                    text = displayName,
+                    text = displayName.ifBlank { uiState.email.substringBefore("@") },
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold
                 )
@@ -116,7 +132,7 @@ fun ProfileScreen(onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "trader@email.com",
+                text = uiState.email,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MutedText
             )
@@ -130,17 +146,17 @@ fun ProfileScreen(onNavigateBack: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             StatBox(
-                value = "142",
+                value = (uiState.metrics?.closedTradeCount ?: 0).toString(),
                 label = "Total Trades",
                 modifier = Modifier.weight(1f)
             )
             StatBox(
-                value = "67%",
+                value = "${uiState.metrics?.winRate?.toInt() ?: 0}%",
                 label = "Win Rate",
                 modifier = Modifier.weight(1f)
             )
             StatBox(
-                value = "$4,520",
+                value = TradeUtils.formatCurrency(uiState.metrics?.netPnl ?: 0.0),
                 label = "Net P/L",
                 modifier = Modifier.weight(1f)
             )

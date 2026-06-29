@@ -38,10 +38,6 @@ fun TradesListScreen(
     var searchQuery by remember { mutableStateOf("") }
     var filterResult by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadTrades("current-user-id")
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()

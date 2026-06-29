@@ -6,6 +6,7 @@ import com.piplog.app.data.model.Trade
 import com.piplog.app.data.model.JournalEntry
 import com.piplog.app.data.repository.TradeRepository
 import com.piplog.app.data.repository.JournalRepository
+import com.piplog.app.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,15 +22,26 @@ data class AnalyticsUiState(
 
 class AnalyticsViewModel(
     private val tradeRepository: TradeRepository = TradeRepository(),
-    private val journalRepository: JournalRepository = JournalRepository()
+    private val journalRepository: JournalRepository = JournalRepository(),
+    private val authRepository: AuthRepository = AuthRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AnalyticsUiState())
     val uiState: StateFlow<AnalyticsUiState> = _uiState.asStateFlow()
 
-    fun loadData(userId: String) {
+    init {
+        loadData()
+    }
+
+    fun loadData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
+
+            val userId = authRepository.currentUserId
+            if (userId == null) {
+                _uiState.update { it.copy(isLoading = false, error = "User not logged in") }
+                return@launch
+            }
 
             val tradesResult = tradeRepository.getAllTrades(userId)
             val noteResult = journalRepository.getLatestEntry(userId)

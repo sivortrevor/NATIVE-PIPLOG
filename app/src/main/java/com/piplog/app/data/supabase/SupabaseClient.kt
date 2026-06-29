@@ -13,8 +13,8 @@ import io.github.jan.supabase.storage.storage
 object SupabaseProvider {
     val client: SupabaseClient by lazy {
         createSupabaseClient(
-            supabaseUrl = BuildConfig.SUPABASE_URL.ifEmpty { "https://placeholder.supabase.co" },
-            supabaseKey = BuildConfig.SUPABASE_ANON_KEY.ifEmpty { "placeholder-key" }
+            supabaseUrl = "https://mtmulkzigwjfrruuwwga.supabase.co",
+            supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10bXVsa3ppZ3dqZnJydXV3d2dhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMzA0NDQsImV4cCI6MjA5NzYwNjQ0NH0.oD1ZSco5Djn52wV3dALPjbZ-VRxbrOxHR_Bokzp3AhA"
         ) {
             install(Auth)
             install(Postgrest)

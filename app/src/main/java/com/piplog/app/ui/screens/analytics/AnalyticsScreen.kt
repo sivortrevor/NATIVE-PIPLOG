@@ -34,10 +34,6 @@ fun AnalyticsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadData("current-user-id")
-    }
-
     val closedTrades = uiState.trades.filter { it.result != null && it.result != "open" }
     val wins = closedTrades.filter { it.result == "win" }
     val losses = closedTrades.filter { it.result == "loss" }

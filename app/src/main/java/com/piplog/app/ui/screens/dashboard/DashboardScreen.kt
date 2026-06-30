@@ -1,38 +1,48 @@
 package com.piplog.app.ui.screens.dashboard
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.piplog.app.ui.components.*
+import com.piplog.app.ui.screens.settings.SettingsScreen
 import com.piplog.app.ui.theme.*
 import com.piplog.app.utils.TradeUtils
-import co.yml.charts.common.model.Point
-import co.yml.charts.axis.AxisData
-import co.yml.charts.ui.linechart.LineChart
-import co.yml.charts.ui.linechart.model.*
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -49,9 +59,12 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var showMenu by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+    var showSettingsSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
     val today = remember {
-        SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()).format(Date())
+        SimpleDateFormat("EEEE, MMMM d", Locale.US).format(Date()).uppercase()
     }
     val greeting = remember {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -61,420 +74,509 @@ fun DashboardScreen(
             else -> "Good evening"
         }
     }
-    val quote = remember {
-        val quotes = listOf(
-            "Protect capital first. Profits follow.",
-            "Discipline beats conviction.",
-            "The market rewards patience.",
-            "Risk less, win more.",
-            "Plan the trade, trade the plan."
-        )
-        quotes[Calendar.getInstance().get(Calendar.DAY_OF_MONTH) % quotes.size]
-    }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(start = 16.dp, end = 16.dp, top = 16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        // Header
+    ThemedBackground {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(bottom = 100.dp) // Space for floating dock
+        ) {
+            // Top App Bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { showSettingsSheet = true }) {
+                    Icon(
+                        Icons.Outlined.Menu,
+                        contentDescription = "Menu",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                
+                PipLogLogo(size = 32.dp)
+            }
+
+            // Greeting Section
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = today,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.Gray,
+                    letterSpacing = 1.sp
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "$greeting, ",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    )
+                    Text(
+                        text = (uiState.profile?.displayName ?: "TREVOR").uppercase(),
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Primary
+                        )
+                    )
+                }
+                Row(
+                    modifier = Modifier.padding(top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.AutoAwesome,
+                        contentDescription = null,
+                        tint = Primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = " Protect capital first. Profits follow.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontStyle = FontStyle.Italic,
+                            color = Color.Gray
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Market Overview
+            MarketOverviewSection()
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Account Balance Card
+            AccountBalanceCard(uiState)
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Metrics Grid
+            MetricsGrid(uiState)
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Quick Actions
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                QuickActionButton(
+                    icon = Icons.Default.Add,
+                    label = "Add",
+                    modifier = Modifier.weight(1f),
+                    isPrimary = true,
+                    onClick = onNavigateToAddTrade
+                )
+                QuickActionButton(
+                    icon = Icons.Default.History,
+                    label = "History",
+                    modifier = Modifier.weight(1f),
+                    onClick = onNavigateToTrades
+                )
+                QuickActionButton(
+                    icon = Icons.Outlined.CalendarMonth,
+                    label = "Calendar",
+                    modifier = Modifier.weight(1f),
+                    onClick = onNavigateToCalendar
+                )
+                QuickActionButton(
+                    icon = Icons.AutoMirrored.Filled.MenuBook,
+                    label = "Journal",
+                    modifier = Modifier.weight(1f),
+                    onClick = onNavigateToJournal
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Chart Section
+            ChartSection(uiState)
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // Settings Bottom Sheet
+        if (showSettingsSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showSettingsSheet = false },
+                sheetState = sheetState,
+                containerColor = Color(0xFF0D1B2A).copy(alpha = 0.95f),
+                scrimColor = Color.Black.copy(alpha = 0.6f),
+                dragHandle = { BottomSheetDefaults.DragHandle(color = Color.White.copy(alpha = 0.3f)) },
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                modifier = Modifier.fillMaxHeight(0.85f)
+            ) {
+                SettingsScreen(
+                    onNavigateBack = { showSettingsSheet = false },
+                    onSignOut = {
+                        showSettingsSheet = false
+                        // Handle sign out logic or navigation
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AccountBalanceCard(uiState: DashboardUiState) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(SurfaceVariant),
-                contentAlignment = Alignment.Center
+            Text(
+                text = "ACCOUNT BALANCE",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray,
+                letterSpacing = 0.5.sp
+            )
+            
+            Surface(
+                color = Color.Red.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(50),
+                border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.2f))
             ) {
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(Icons.Outlined.Menu, contentDescription = "Menu")
-                }
-
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Settings") },
-                        onClick = {
-                            showMenu = false
-                            onNavigateToSettings()
-                        },
-                        leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Sign out") },
-                        onClick = {
-                            showMenu = false
-                        },
-                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) }
-                    )
-                }
-            }
-
-            PipLogLogo(size = 36.dp)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Greeting tile
-        GlassCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Text(
-                    text = today.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MutedText,
-                    letterSpacing = 1.sp
-                )
-                Text(
-                    text = "$greeting, ${uiState.profile?.displayName ?: "TRADER"}",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
                 Row(
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        Icons.Filled.AutoAwesome,
+                        Icons.Default.TrendingDown,
                         contentDescription = null,
-                        tint = Primary,
-                        modifier = Modifier.size(14.dp)
+                        tint = Color.Red,
+                        modifier = Modifier.size(12.dp)
                     )
                     Text(
-                        text = " $quote",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MutedText,
-                        modifier = Modifier.padding(start = 6.dp)
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Account overview
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "ACCOUNT BALANCE",
+                        text = " -26.60%",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MutedText
+                        color = Color.Red,
+                        fontWeight = FontWeight.Bold
                     )
-                    val growth = uiState.metrics?.growth ?: 0.0
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = if (growth >= 0) ProfitBackground else LossBackground
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                if (growth >= 0) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
-                                contentDescription = null,
-                                tint = if (growth >= 0) Profit else Loss,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Text(
-                                text = "${if (growth >= 0) "+" else ""}%.2f%%".format(growth),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (growth >= 0) Profit else Loss,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-
-                Text(
-                    text = TradeUtils.formatCurrency(uiState.metrics?.balance ?: 10000.0),
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    StatPill(
-                        label = "Net P/L",
-                        value = TradeUtils.formatCurrency(uiState.metrics?.netPnl ?: 0.0),
-                        tone = if ((uiState.metrics?.netPnl ?: 0.0) >= 0) StatTone.POSITIVE else StatTone.NEGATIVE,
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatPill(
-                        label = "Today",
-                        value = TradeUtils.formatCurrency(uiState.metrics?.todayPnl ?: 0.0),
-                        tone = when {
-                            (uiState.metrics?.todayPnl ?: 0.0) > 0 -> StatTone.POSITIVE
-                            (uiState.metrics?.todayPnl ?: 0.0) < 0 -> StatTone.NEGATIVE
-                            else -> StatTone.NEUTRAL
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatPill(
-                        label = "Drawdown",
-                        value = "%.1f%%".format(uiState.metrics?.currentDrawdown ?: 0.0),
-                        tone = if ((uiState.metrics?.currentDrawdown ?: 0.0) <= -5) StatTone.NEGATIVE else StatTone.NEUTRAL,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                // Equity chart placeholder
-                if (uiState.equityCurve.isNotEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(160.dp)
-                            .padding(top = 16.dp)
-                    ) {
-                        EquityLineChart(
-                            data = uiState.equityCurve.map { it.equity },
-                            labels = uiState.equityCurve.map {
-                                SimpleDateFormat("MMM dd", Locale.US).format(Date(it.timestamp))
-                            }
-                        )
-                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Quick actions
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            QuickActionButton(
-                icon = Icons.Filled.Add,
-                label = "Add",
-                isPrimary = true,
-                onClick = onNavigateToAddTrade,
-                modifier = Modifier.weight(1f)
-            )
-            QuickActionButton(
-                icon = Icons.Filled.History,
-                label = "History",
-                onClick = onNavigateToTrades,
-                modifier = Modifier.weight(1f)
-            )
-            QuickActionButton(
-                icon = Icons.Outlined.BarChart,
-                label = "Calendar",
-                onClick = onNavigateToCalendar,
-                modifier = Modifier.weight(1f)
-            )
-            QuickActionButton(
-                icon = Icons.Filled.MenuBook,
-                label = "Journal",
-                onClick = onNavigateToJournal,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Detailed Stats
-        SectionHeader(
-            title = "DETAILED STATISTICS",
-            icon = { Icon(Icons.Default.Analytics, contentDescription = null, tint = Primary) }
+        Text(
+            text = TradeUtils.formatCurrency(uiState.metrics?.balance ?: 7340.0),
+            style = MaterialTheme.typography.displayMedium.copy(
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onBackground
+            ),
+            modifier = Modifier.padding(vertical = 4.dp)
         )
+        
+        Text(
+            text = "Equity ${TradeUtils.formatCurrency(uiState.metrics?.balance ?: 7340.0)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Gray
+        )
+    }
+}
 
-        Spacer(modifier = Modifier.height(12.dp))
-
+@Composable
+fun ChartSection(uiState: DashboardUiState) {
+    var selectedPeriod by remember { mutableStateOf("1M") }
+    
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Period Selector
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            DetailedStatCard(
-                label = "Win Rate",
-                value = "${uiState.metrics?.winRate?.toInt() ?: 0}%",
-                modifier = Modifier.weight(1f)
-            )
-            DetailedStatCard(
-                label = "Profit Factor",
-                value = "1.24", // Placeholder
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            DetailedStatCard(
-                label = "Avg. RR",
-                value = "1:%.1f".format(uiState.metrics?.avgRR ?: 0.0),
-                modifier = Modifier.weight(1f)
-            )
-            DetailedStatCard(
-                label = "Max DD",
-                value = "%.1f%%".format(uiState.metrics?.maxDrawdown ?: 0.0),
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Weekly goal
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+            listOf("1D", "1W", "1M", "3M", "1Y", "ALL").forEach { period ->
+                val isSelected = period == selectedPeriod
+                Surface(
+                    onClick = { selectedPeriod = period },
+                    color = if (isSelected) Primary else Color.Transparent,
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier.height(32.dp)
                 ) {
-                    Column {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
-                            text = "WEEKLY GOAL",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MutedText
-                        )
-                        Row(modifier = Modifier.padding(top = 4.dp), verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                text = TradeUtils.formatCurrency(uiState.metrics?.weeklyPnl ?: 0.0),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = if ((uiState.metrics?.weeklyPnl ?: 0.0) >= 0) Profit else Loss
-                            )
-                            Text(
-                                text = " / ${TradeUtils.formatCurrency(500.0)}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MutedText
-                            )
-                        }
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "DAYS",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MutedText
-                        )
-                        Text(
-                            text = "${uiState.metrics?.weeklyDays ?: 0}/7",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                            modifier = Modifier.padding(top = 4.dp)
+                            text = period,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (isSelected) Color.White else Color.Gray,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
                     }
                 }
-
-                val weeklyProgress = ((uiState.metrics?.weeklyPnl ?: 0.0) / 500.0 * 100).coerceIn(0.0, 100.0)
-                LinearProgressIndicator(
-                    progress = weeklyProgress.toFloat() / 100f,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .padding(top = 16.dp),
-                    color = Primary,
-                    trackColor = SurfaceVariant
-                )
-
-                Text(
-                    text = "%.0f%% to weekly target".format(weeklyProgress),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MutedText,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        // Interactive Smooth Chart
+        InteractiveSmoothChart(
+            period = selectedPeriod,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .padding(horizontal = 16.dp)
+        )
     }
 }
 
 @Composable
-fun EquityLineChart(
-    data: List<Double>,
-    labels: List<String>
-) {
-    val maxDataValue = data.maxOrNull() ?: return
-    val minDataValue = data.minOrNull() ?: return
-
-    val pointsData = data.mapIndexed { index, value ->
-        Point(index.toFloat(), value.toFloat())
-    }
-
-    val lineChartData = LineChartData(
-        linePlotData = LinePlotData(
-            lines = listOf(
-                    Line(
-                        dataPoints = pointsData,
-                        lineStyle = LineStyle(
-                            color = Primary,
-                            lineType = LineType.SmoothCurve()
-                        ),
-                        intersectionPoint = IntersectionPoint(
-                            color = Primary
-                        ),
-                        selectionHighlightPoint = SelectionHighlightPoint(
-                            color = Primary
-                        ),
-                        selectionHighlightPopUp = SelectionHighlightPopUp()
-                    )
-            )
-        ),
-        xAxisData = AxisData.Builder()
-            .axisLabelColor(MutedText)
-            .axisLineColor(Color.Transparent)
-            .steps(pointsData.size - 1)
-            .labelData { index -> labels.getOrElse(index) { "" } }
-            .labelAndAxisLinePadding(10.dp)
-            .build(),
-        yAxisData = AxisData.Builder()
-            .axisLabelColor(MutedText)
-            .axisLineColor(Color.Transparent)
-            .steps(5)
-            .labelData { index -> "" }
-            .labelAndAxisLinePadding(10.dp)
-            .build(),
-        backgroundColor = Color.Transparent
-    )
-
-    LineChart(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(160.dp),
-        lineChartData = lineChartData
-    )
-}
-
-@Composable
-fun DetailedStatCard(
-    label: String,
-    value: String,
+fun InteractiveSmoothChart(
+    period: String,
     modifier: Modifier = Modifier
 ) {
-    GlassCard(modifier = modifier) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MutedText
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+    // Generate dummy data based on period for demonstration
+    val points = remember(period) {
+        val count = when(period) {
+            "1D" -> 24
+            "1W" -> 7
+            "1M" -> 30
+            else -> 20
         }
+        List(count) { i ->
+            i.toFloat() / (count - 1) to (0.2f + Math.random().toFloat() * 0.6f)
+        }
+    }
+
+    var selectedPoint by remember { mutableStateOf<Offset?>(null) }
+    val markerColor = MaterialTheme.colorScheme.onBackground
+    val markerGlowColor = Primary.copy(alpha = 0.4f)
+    val lineDashColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
+
+    Box(
+        modifier = modifier
+            .pointerInput(period) {
+                detectTapGestures { offset ->
+                    selectedPoint = offset
+                }
+            }
+            .pointerInput(period) {
+                // For crosshair tracking
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val pos = event.changes.first().position
+                        selectedPoint = pos
+                    }
+                }
+            }
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val width = size.width
+            val height = size.height
+            
+            if (points.isEmpty()) return@Canvas
+
+            val linePath = androidx.compose.ui.graphics.Path()
+            val scaledPoints = points.map { (x, y) -> 
+                Offset(x * width, (1 - y) * height)
+            }
+
+            linePath.moveTo(scaledPoints[0].x, scaledPoints[0].y)
+            
+            // Draw smooth curve using cubic beziers
+            for (i in 0 until scaledPoints.size - 1) {
+                val p0 = scaledPoints[i]
+                val p1 = scaledPoints[i + 1]
+                
+                val cx1 = p0.x + (p1.x - p0.x) / 2f
+                val cy1 = p0.y
+                val cx2 = p0.x + (p1.x - p0.x) / 2f
+                val cy2 = p1.y
+                
+                linePath.cubicTo(cx1, cy1, cx2, cy2, p1.x, p1.y)
+            }
+
+            // Line stroke
+            drawPath(
+                path = linePath,
+                brush = Brush.horizontalGradient(listOf(Primary, Color(0xFF64B5F6))),
+                style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+            )
+
+            // Fill gradient
+            val fillPath = androidx.compose.ui.graphics.Path().apply {
+                addPath(linePath)
+                lineTo(width, height)
+                lineTo(0f, height)
+                close()
+            }
+
+            drawPath(
+                path = fillPath,
+                brush = Brush.verticalGradient(
+                    colors = listOf(Primary.copy(alpha = 0.3f), Color.Transparent)
+                )
+            )
+
+            // Draw selection marker and tooltip
+            selectedPoint?.let { point ->
+                // Find closest point on X axis
+                val closestPoint = scaledPoints.minByOrNull { Math.abs(it.x - point.x) }
+                closestPoint?.let { cp ->
+                    // Glow effect at point
+                    drawCircle(
+                        color = markerColor,
+                        radius = 6.dp.toPx(),
+                        center = cp,
+                        style = Fill
+                    )
+                    drawCircle(
+                        color = markerGlowColor,
+                        radius = 12.dp.toPx(),
+                        center = cp,
+                        style = Fill
+                    )
+                    
+                    // Vertical line
+                    drawLine(
+                        color = lineDashColor,
+                        start = Offset(cp.x, 0f),
+                        end = Offset(cp.x, height),
+                        strokeWidth = 1.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MarketOverviewSection() {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Market Overview",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(Color.Green)
+                        .blur(4.dp)
+                )
+                Text(
+                    text = " LIVE",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Green,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Grid of Market Cards with micro-interactions
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MarketCard("GBPUSD", 0.25, modifier = Modifier.weight(1f))
+                MarketCard("EURUSD", -0.12, modifier = Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MarketCard("USDJPY", 0.08, modifier = Modifier.weight(1f))
+                MarketCard("XAUUSD", 1.10, modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+fun MarketCard(pair: String, change: Double, modifier: Modifier = Modifier) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (isPressed) 0.98f else 1f)
+
+    Surface(
+        modifier = modifier
+            .scale(scale)
+            .clickable(interactionSource = interactionSource, indication = null) { },
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = pair,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = if (change >= 0) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    tint = if (change >= 0) Color.Green else Color.Red,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = "${String.format("%.2f", Math.abs(change))}%",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = if (change >= 0) Color.Green else Color.Red
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MetricsGrid(uiState: DashboardUiState) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        MetricItem("NET P/L", "-$2,660...", Color.Red, modifier = Modifier.weight(1f))
+        MetricItem("TODAY", "$0.00", MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
+        MetricItem("DRAWDOWN", "-84.4%", Color.Red, modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+fun MetricItem(label: String, value: String, valueColor: Color, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.ExtraBold,
+                color = valueColor
+            ),
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 
@@ -482,29 +584,39 @@ fun DetailedStatCard(
 fun QuickActionButton(
     icon: ImageVector,
     label: String,
+    modifier: Modifier = Modifier,
     isPrimary: Boolean = false,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit
 ) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (isPrimary) Primary else SurfaceVariant)
-            .padding(vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (isPressed) 0.95f else 1f)
+
+    Surface(
+        onClick = onClick,
+        interactionSource = interactionSource,
+        color = if (isPrimary) Primary else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(20.dp),
+        border = if (isPrimary) null else BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)),
+        modifier = modifier.scale(scale)
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = if (isPrimary) Color.White else OnSurface,
-            modifier = Modifier.size(20.dp)
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (isPrimary) Color.White else OnSurface,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 4.dp)
-        )
+        Column(
+            modifier = Modifier.padding(vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (isPrimary) Color.White else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                modifier = Modifier.size(24.dp)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (isPrimary) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
     }
 }

@@ -16,6 +16,15 @@ val Surface = Color(0xFF1A1A2E)       // oklch(0.22 0.035 258)
 val SurfaceVariant = Color(0xFF252538)
 val SurfaceElevated = Color(0xFF2D2D44)
 
+// Background colors (Light theme)
+val LightBackgroundStart = Color(0xFFE0F2FE) // Light blue
+val LightBackgroundEnd = Color(0xFFFFFFFF)   // White
+val LightSurface = Color(0xFFFFFFFF)
+val LightSurfaceVariant = Color(0xFFF1F5F9)
+val OnLightBackground = Color(0xFF1E293B)
+val OnLightSurface = Color(0xFF1E293B)
+val LightMutedText = Color(0xFF64748B)
+
 // Text colors
 val OnBackground = Color(0xFFE3E3F0)
 val OnSurface = Color(0xFFE3E3F0)

@@ -67,7 +67,18 @@ class AuthViewModel(
             val result = authRepository.signUpWithEmail(email, password, displayName)
             result.fold(
                 onSuccess = {
-                    _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
+                    // Check if we actually have a session (in case email confirmation is required)
+                    val currentState = authRepository.getCurrentSession()
+                    if (currentState.isLoggedIn) {
+                        _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
+                    } else {
+                        _uiState.update { 
+                            it.copy(
+                                isLoading = false, 
+                                error = "Registration successful! Please check your email to confirm your account."
+                            ) 
+                        }
+                    }
                 },
                 onFailure = { error ->
                     _uiState.update { it.copy(isLoading = false, error = error.message ?: "Registration failed") }

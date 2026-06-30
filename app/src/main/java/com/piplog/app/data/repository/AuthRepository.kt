@@ -2,6 +2,7 @@ package com.piplog.app.data.repository
 
 import com.piplog.app.data.model.Profile
 import com.piplog.app.data.supabase.SupabaseProvider
+import com.piplog.app.BuildConfig
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.providers.builtin.IDToken
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import android.content.Context
+import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -26,6 +28,7 @@ data class AuthState(
 
 class AuthRepository {
 
+    private val tag = "AuthRepository"
     val sessionStatus: Flow<SessionStatus> = SupabaseProvider.auth.sessionStatus
 
     val currentUserId: String?
@@ -33,18 +36,22 @@ class AuthRepository {
 
     suspend fun signInWithEmail(email: String, password: String): Result<Unit> {
         return try {
+            Log.d(tag, "Attempting sign in for: $email")
             SupabaseProvider.auth.signInWith(Email) {
                 this.email = email
                 this.password = password
             }
+            Log.d(tag, "Sign in successful")
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e(tag, "Sign in failed: ${e.message}", e)
             Result.failure(e)
         }
     }
 
     suspend fun signUpWithEmail(email: String, password: String, displayName: String?): Result<Unit> {
         return try {
+            Log.d(tag, "Attempting sign up for: $email")
             SupabaseProvider.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
@@ -52,18 +59,23 @@ class AuthRepository {
                     displayName?.let { put("display_name", it) }
                 }
             }
+            Log.d(tag, "Sign up successful")
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e(tag, "Sign up failed: ${e.message}", e)
             Result.failure(e)
         }
     }
 
     suspend fun signInWithGoogle(context: Context): Result<Unit> {
         return try {
+            Log.d(tag, "Attempting Google sign in")
             val credentialManager = CredentialManager.create(context)
             
-            // You will need to get this from the Google Cloud Console
-            val serverClientId = "YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com"
+            val serverClientId = BuildConfig.GOOGLE_CLIENT_ID
+            if (serverClientId.isBlank()) {
+                return Result.failure(Exception("Google Client ID is not configured in local.properties"))
+            }
             
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
@@ -83,11 +95,14 @@ class AuthRepository {
                     idToken = credential.idToken
                     provider = Google
                 }
+                Log.d(tag, "Google sign in successful")
                 Result.success(Unit)
             } else {
+                Log.e(tag, "Received invalid credential type: ${credential.javaClass.simpleName}")
                 Result.failure(Exception("Received invalid credential type"))
             }
         } catch (e: Exception) {
+            Log.e(tag, "Google sign in failed: ${e.message}", e)
             Result.failure(e)
         }
     }

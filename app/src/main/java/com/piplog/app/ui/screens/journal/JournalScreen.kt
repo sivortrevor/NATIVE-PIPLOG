@@ -14,14 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.piplog.app.data.model.JournalEntry
 import com.piplog.app.ui.theme.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -41,7 +36,7 @@ fun JournalScreen(
     var editingEntry by remember { mutableStateOf<JournalEntry?>(null) }
 
     LaunchedEffect(Unit) {
-        viewModel.loadEntries("current-user-id")
+        viewModel.loadEntries()
     }
 
     Scaffold(
@@ -116,7 +111,7 @@ fun JournalScreen(
                 editingEntry = null
             },
             onSave = { title, content, type ->
-                viewModel.saveEntry(title, content, type)
+                viewModel.saveEntry(title, content, type, editingEntry)
                 showAddDialog = false
                 editingEntry = null
             }
@@ -149,7 +144,7 @@ fun EmptyJournalState(onAddEntry: () -> Unit) {
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Journal Coming Soon",
+            text = "No journal entries yet",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.ExtraBold
         )
@@ -300,16 +295,4 @@ fun JournalEntryDialog(
     )
 }
 
-class JournalViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow(JournalUiState())
-    val uiState: StateFlow<JournalUiState> = _uiState.asStateFlow()
-
-    fun loadEntries(userId: String) {
-        _uiState.update { it.copy(isLoading = false) }
-    }
-
-    fun saveEntry(title: String, content: String, type: String) {
-        // Save entry logic
-    }
-}
 

@@ -3,6 +3,7 @@ package com.piplog.app.ui.screens.auth
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -200,8 +202,10 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        val context = LocalContext.current
+
         OutlinedButton(
-            onClick = { viewModel.signInWithGoogle() },
+            onClick = { viewModel.signInWithGoogle(context) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -225,7 +229,10 @@ fun RegisterScreen(
                 text = "Sign in",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
-                textDecoration = TextDecoration.Underline
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier
+                    .clickable { onNavigateToLogin() }
+                    .padding(4.dp)
             )
         }
     }

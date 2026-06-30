@@ -3,8 +3,6 @@ package com.piplog.app.ui.screens.calendar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,14 +16,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.piplog.app.ui.theme.*
 import com.piplog.app.utils.TradeUtils
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -40,7 +33,8 @@ data class CalendarUiState(
     val isLoading: Boolean = true,
     val days: List<CalendarDay> = emptyList(),
     val selectedDate: CalendarDay? = null,
-    val selectedDayTrades: List<com.piplog.app.data.model.Trade> = emptyList()
+    val selectedDayTrades: List<com.piplog.app.data.model.Trade> = emptyList(),
+    val allTrades: List<com.piplog.app.data.model.Trade> = emptyList()
 )
 
 @Composable
@@ -53,7 +47,7 @@ fun CalendarScreen(
     val currentMonth = remember { mutableStateOf(Calendar.getInstance()) }
 
     LaunchedEffect(Unit) {
-        viewModel.loadCalendar("current-user-id")
+        viewModel.loadCalendar()
     }
 
     Column(
@@ -307,15 +301,3 @@ fun CalendarDayCell(
     }
 }
 
-class CalendarViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow(CalendarUiState())
-    val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
-
-    fun loadCalendar(userId: String) {
-        _uiState.update { it.copy(isLoading = false) }
-    }
-
-    fun selectDate(dateKey: String) {
-        _uiState.update { it.copy(selectedDate = CalendarDay(Date(0), 0.0, 0, dateKey)) }
-    }
-}

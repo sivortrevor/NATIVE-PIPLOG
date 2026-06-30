@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -231,6 +232,8 @@ fun LoginScreen(
                 modifier = Modifier
                     .padding(start = 4.dp)
                     .clip(RoundedCornerShape(4.dp))
+                    .clickable { onNavigateToRegister() }
+                    .padding(4.dp)
             )
         }
     }

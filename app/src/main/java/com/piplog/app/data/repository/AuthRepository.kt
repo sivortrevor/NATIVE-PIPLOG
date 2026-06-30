@@ -2,11 +2,17 @@ package com.piplog.app.data.repository
 
 import com.piplog.app.data.model.Profile
 import com.piplog.app.data.supabase.SupabaseProvider
+import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import android.content.Context
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 
 data class AuthState(
     val isLoggedIn: Boolean = false,
@@ -51,12 +57,34 @@ class AuthRepository {
         }
     }
 
-    suspend fun signInWithGoogle(): Result<Unit> {
+    suspend fun signInWithGoogle(context: Context): Result<Unit> {
         return try {
-            // Placeholder for Google Sign-In logic
-            // In a real app, you'd use the native Google Sign-In SDK then pass the ID token to Supabase
-            // Result.success(Unit)
-            Result.failure(Exception("Google Sign-In not implemented"))
+            val credentialManager = CredentialManager.create(context)
+            
+            // You will need to get this from the Google Cloud Console
+            val serverClientId = "YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com"
+            
+            val googleIdOption = GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false)
+                .setServerClientId(serverClientId)
+                .setAutoSelectEnabled(true)
+                .build()
+
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOption)
+                .build()
+
+            val result = credentialManager.getCredential(context, request)
+            val credential = result.credential
+
+            if (credential is GoogleIdTokenCredential) {
+                SupabaseProvider.auth.signInWith(Google) {
+                    idToken = credential.idToken
+                }
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Received invalid credential type"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }

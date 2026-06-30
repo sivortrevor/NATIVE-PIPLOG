@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.piplog.app.data.repository.AuthRepository
 import com.piplog.app.data.repository.AuthState
+import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -75,13 +76,13 @@ class AuthViewModel(
         }
     }
 
-    fun signInWithGoogle() {
+    fun signInWithGoogle(context: Context) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            val result = authRepository.signInWithGoogle()
+            val result = authRepository.signInWithGoogle(context)
             result.fold(
                 onSuccess = {
-                    _uiState.update { it.copy(isLoading = false) }
+                    _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
                 },
                 onFailure = { error ->
                     _uiState.update { it.copy(isLoading = false, error = error.message ?: "Google sign-in failed") }

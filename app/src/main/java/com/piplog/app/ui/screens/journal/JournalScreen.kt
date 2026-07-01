@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,63 +40,69 @@ fun JournalScreen(
         viewModel.loadEntries()
     }
 
-    Scaffold(
-        topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Journal",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(
-                        text = "Daily reflections, lessons, and goals",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MutedText
-                    )
-                }
-                IconButton(onClick = { showAddDialog = true }) {
-                    Icon(Icons.Filled.Add, contentDescription = "Add entry", tint = Primary)
+    ThemedBackground {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Journal",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            text = "Daily reflections, lessons, and goals",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = { showAddDialog = true }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Add entry", tint = Primary)
+                    }
                 }
             }
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp)
-        ) {
-            if (uiState.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = Primary)
-                }
-            } else if (uiState.entries.isEmpty()) {
-                Box(modifier = Modifier.weight(1f)) {
-                    EmptyJournalState(onAddEntry = { showAddDialog = true })
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    items(uiState.entries) { entry ->
-                        JournalEntryCard(
-                            entry = entry,
-                            onClick = { editingEntry = entry }
-                        )
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 16.dp)
+            ) {
+                if (uiState.isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Primary)
+                    }
+                } else if (uiState.entries.isEmpty()) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        EmptyJournalState(onAddEntry = { showAddDialog = true })
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(uiState.entries) { entry ->
+                            JournalEntryCard(
+                                entry = entry,
+                                onClick = { editingEntry = entry }
+                            )
+                        }
                     }
                 }
             }
@@ -110,7 +117,7 @@ fun JournalScreen(
                 showAddDialog = false
                 editingEntry = null
             },
-            onSave = { title, content, type ->
+            onSave = { title: String, content: String, type: String ->
                 viewModel.saveEntry(title, content, type, editingEntry)
                 showAddDialog = false
                 editingEntry = null
@@ -146,13 +153,14 @@ fun EmptyJournalState(onAddEntry: () -> Unit) {
         Text(
             text = "No journal entries yet",
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.ExtraBold
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Daily entries, weekly reviews, lesson logs,\nand goal tracking — all searchable.",
             style = MaterialTheme.typography.bodyMedium,
-            color = MutedText,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
         Spacer(modifier = Modifier.height(24.dp))
@@ -294,5 +302,3 @@ fun JournalEntryDialog(
         }
     )
 }
-
-

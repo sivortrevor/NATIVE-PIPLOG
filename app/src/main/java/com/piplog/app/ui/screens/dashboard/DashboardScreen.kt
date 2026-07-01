@@ -212,9 +212,9 @@ fun DashboardScreen(
             ModalBottomSheet(
                 onDismissRequest = { showSettingsSheet = false },
                 sheetState = sheetState,
-                containerColor = Color(0xFF0D1B2A).copy(alpha = 0.95f),
-                scrimColor = Color.Black.copy(alpha = 0.6f),
-                dragHandle = { BottomSheetDefaults.DragHandle(color = Color.White.copy(alpha = 0.3f)) },
+                containerColor = MaterialTheme.colorScheme.surface,
+                scrimColor = Color.Black.copy(alpha = 0.4f),
+                dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)) },
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
                 modifier = Modifier.fillMaxHeight(0.85f)
             ) {

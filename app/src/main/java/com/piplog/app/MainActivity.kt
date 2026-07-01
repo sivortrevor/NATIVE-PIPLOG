@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
                                 color = Color.Transparent,
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(bottom = if (showBottomBar) 0.dp else innerPadding.calculateBottomPadding())
+                                    .padding(bottom = if (showBottomBar) 112.dp else innerPadding.calculateBottomPadding())
                             ) {
                                 PipLogNavHost(navController = navController)
                             }
@@ -96,7 +96,7 @@ class MainActivity : ComponentActivity() {
                         GlassmorphicDock(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .padding(bottom = 24.dp, start = 24.dp, end = 24.dp),
+                                .padding(bottom = 24.dp, start = 20.dp, end = 20.dp),
                             items = bottomNavItems,
                             currentRoute = currentRoute,
                             onNavigate = { route ->
@@ -129,7 +129,7 @@ fun GlassmorphicDock(
 ) {
     val isLight = MaterialTheme.colorScheme.surface.luminance() > 0.5f
     
-    // Deeper, more saturated colors to avoid "washed" look
+    // Proportions matched to reference image
     val dockBgColor = if (isLight) {
         Color.White.copy(alpha = 0.85f)
     } else {
@@ -145,7 +145,7 @@ fun GlassmorphicDock(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(84.dp),
+            .height(72.dp),
         contentAlignment = Alignment.Center
     ) {
         // LAYER 1: Shadow & Background (Blurred)
@@ -153,12 +153,12 @@ fun GlassmorphicDock(
             modifier = Modifier
                 .fillMaxSize()
                 .shadow(
-                    elevation = 20.dp,
-                    shape = RoundedCornerShape(32.dp),
+                    elevation = 12.dp,
+                    shape = RoundedCornerShape(28.dp),
                     ambientColor = Color.Black,
                     spotColor = Color.Black
                 )
-                .clip(RoundedCornerShape(32.dp))
+                .clip(RoundedCornerShape(28.dp))
                 .background(dockBgColor)
                 .border(
                     width = 1.dp,
@@ -168,15 +168,15 @@ fun GlassmorphicDock(
                             dockBorderColor.copy(alpha = 0.3f)
                         )
                     ),
-                    shape = RoundedCornerShape(32.dp)
+                    shape = RoundedCornerShape(28.dp)
                 )
         )
 
-        // LAYER 2: Content (Sharp - No Blur)
+        // LAYER 2: Content (Sharp)
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -189,13 +189,13 @@ fun GlassmorphicDock(
                 )
             }
 
-            // Central "+" Button (Matches Reference)
+            // Central "+" Button (Elevated)
             Box(
                 modifier = Modifier
-                    .size(60.dp)
-                    .offset(y = (-8).dp)
+                    .size(54.dp)
+                    .offset(y = (-2).dp)
                     .shadow(
-                        elevation = 12.dp,
+                        elevation = 8.dp,
                         shape = CircleShape,
                         clip = false,
                         ambientColor = Color(0xFF3B82F6),
@@ -217,7 +217,7 @@ fun GlassmorphicDock(
                     Icons.Default.Add,
                     contentDescription = "Add",
                     tint = Color.White,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(28.dp)
                 )
             }
 
@@ -257,7 +257,7 @@ fun DockItem(
 
     Column(
         modifier = Modifier
-            .width(64.dp)
+            .width(56.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -271,18 +271,18 @@ fun DockItem(
             contentDescription = item.label,
             tint = color,
             modifier = Modifier
-                .size(24.dp)
+                .size(22.dp)
                 .scale(scale)
         )
         
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         
         Text(
             text = item.label,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
-                letterSpacing = 0.5.sp
+                letterSpacing = 0.2.sp
             ),
             color = color
         )

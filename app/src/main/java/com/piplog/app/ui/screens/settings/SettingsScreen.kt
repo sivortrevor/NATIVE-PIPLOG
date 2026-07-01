@@ -28,9 +28,9 @@ import com.piplog.app.ui.theme.*
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
-    onSignOut: () -> Unit,
-    themeViewModel: ThemeViewModel = viewModel()
+    onSignOut: () -> Unit
 ) {
+    val themeViewModel = LocalThemeViewModel.current
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
 
     Column(

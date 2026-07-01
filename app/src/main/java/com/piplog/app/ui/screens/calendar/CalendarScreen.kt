@@ -50,53 +50,56 @@ fun CalendarScreen(
         viewModel.loadCalendar()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-    ) {
-        // Header
-        Row(
+    ThemedBackground {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
         ) {
-            IconButton(onClick = onNavigateBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-            }
-            Text(
-                text = "Calendar",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.ExtraBold
-            )
-        }
-
-        // Month navigation
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = {
-                currentMonth.value.add(Calendar.MONTH, -1)
-            }) {
-                Icon(Icons.Filled.ChevronLeft, contentDescription = "Previous month")
+            // Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
+                }
+                Text(
+                    text = "Calendar",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
             }
 
-            val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.US)
-            Text(
-                text = monthFormat.format(currentMonth.value.time).uppercase(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            // Month navigation
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = {
+                    currentMonth.value.add(Calendar.MONTH, -1)
+                }) {
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "Previous month", tint = MaterialTheme.colorScheme.onBackground)
+                }
 
-            IconButton(onClick = {
-                currentMonth.value.add(Calendar.MONTH, 1)
-            }) {
-                Icon(Icons.Filled.ChevronRight, contentDescription = "Next month")
+                val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.US)
+                Text(
+                    text = monthFormat.format(currentMonth.value.time).uppercase(),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                IconButton(onClick = {
+                    currentMonth.value.add(Calendar.MONTH, 1)
+                }) {
+                    Icon(Icons.Filled.ChevronRight, contentDescription = "Next month", tint = MaterialTheme.colorScheme.onBackground)
+                }
             }
-        }
 
         // Weekday labels
         Row(
@@ -109,7 +112,7 @@ fun CalendarScreen(
                 Text(
                     text = day,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MutedText,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.width(40.dp)
                 )
@@ -162,14 +165,15 @@ fun CalendarScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                color = SurfaceVariant
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     val dateFormat = SimpleDateFormat("EEEE, MMMM d", Locale.US)
                     Text(
                         text = dateFormat.format(selected.date),
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -179,11 +183,11 @@ fun CalendarScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text("Trades", style = MaterialTheme.typography.labelSmall, color = MutedText)
-                            Text("${selected.tradeCount}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+                            Text("Trades", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${selected.tradeCount}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Text("P/L", style = MaterialTheme.typography.labelSmall, color = MutedText)
+                            Text("P/L", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
                                 TradeUtils.formatCurrency(selected.pnl),
                                 style = MaterialTheme.typography.titleLarge,
@@ -197,7 +201,11 @@ fun CalendarScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         ElevatedButton(
                             onClick = onNavigateToTrades,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.elevatedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
                         ) {
                             Text("View ${uiState.selectedDayTrades.size} trades")
                         }
@@ -225,13 +233,13 @@ fun CalendarScreen(
             Surface(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
-                color = SurfaceVariant
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Month P/L", style = MaterialTheme.typography.labelSmall, color = MutedText)
+                    Text("Month P/L", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         TradeUtils.formatCurrency(monthPnl),
                         style = MaterialTheme.typography.titleMedium,
@@ -243,20 +251,21 @@ fun CalendarScreen(
             Surface(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
-                color = SurfaceVariant
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Total Trades", style = MaterialTheme.typography.labelSmall, color = MutedText)
-                    Text("$monthTrades", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold)
+                    Text("Total Trades", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("$monthTrades", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
     }
+}
 }
 
 @Composable

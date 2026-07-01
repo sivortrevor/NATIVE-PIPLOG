@@ -112,7 +112,8 @@ fun PipLogTheme(
     }
 
     CompositionLocalProvider(
-        LocalBackgroundBrush provides backgroundBrush
+        LocalBackgroundBrush provides backgroundBrush,
+        LocalThemeViewModel provides themeViewModel
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
@@ -139,3 +140,4 @@ fun ThemedBackground(
 }
 
 val LocalBackgroundBrush = staticCompositionLocalOf<Brush?> { null }
+val LocalThemeViewModel = staticCompositionLocalOf<ThemeViewModel> { error("No ThemeViewModel provided") }
